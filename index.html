@@ -31,7 +31,13 @@
             <option value="Duck.glb">GLB Duck - KhronosGroup Models Testing</option>
             <option value="NodePerformanceTest.glb">Wait a little bit! NodePerformanceTest - KhronosGroup Models Testing
             </option>
+            <option value="NodePerformanceTest_opt.glb">Wait a little bit! NodePerformanceTest - Optimized with
+                gltf-transform -
+                KhronosGroup Models Testing
+            </option>
             <option value="grinkopf.glb">Wait a little bit! Grinkopf Cologne -
+                https://codeforcologne.github.io/Denkmal-4D-Koeln/</option>
+            <option value="grinkopf_opt.glb">Grinkopf Cologne - Optimized with gltf-transform
                 https://codeforcologne.github.io/Denkmal-4D-Koeln/</option>
             <option value="coffeemat.glb">GLB coffeemat with KTX2 cpmpression - KhronosGroup Models Testing</option>
         </select>
@@ -104,7 +110,7 @@
         }
 
         /*
-             window.THREE = require( './lib/three/three.js' );             
+             window.THREE = require( './lib/three/three.js' );
            */
 
         // let modeltype = 'glb';
@@ -130,7 +136,7 @@
             directionalLight.shadow.camera.near = 1;
             directionalLight.shadow.camera.far = 50;
             directionalLight.color.setHSL(0.1, 1, 0.95);
-            /*            
+            /*
             lightHelper = new THREE.DirectionalLightHelper( directionalLight );
                                         this.scene.add( lightHelper );
             */
@@ -163,7 +169,7 @@
 
             // move the camera to a position distance units way from the center
             // in whatever direction the camera was from the center already
-            // for the screenshots, it is good not too be too far away              
+            // for the screenshots, it is good not too be too far away
             camera.position.copy(direction.multiplyScalar(distance + 3).add(boxCenter));
 
             // pick some near and far values for the frustum that
@@ -269,7 +275,7 @@
             this.scene.environment = pmremGenerator.fromScene(environment).texture;
             environment.dispose();
             TD.addShadowedLight(1, 1, 1, 0xffffff, 3.5);
-            // helper for testing      
+            // helper for testing
             /*
             const grid = new THREE.GridHelper(500, 10, 0xffffff, 0xffffff);
             grid.material.opacity = 0.5;
@@ -309,7 +315,7 @@
         };
 
 
-        // STL Material wird Geometry hinzugefügt 
+        // STL Material wird Geometry hinzugefügt
         TD.geometryToObject = function (geometry) {
             const material = new THREE.MeshPhongMaterial(
                 {
