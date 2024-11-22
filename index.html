@@ -125,25 +125,6 @@
 
         const TD = ThreeD.prototype;
 
-
-        TD.addShadowedLight = function (x, y, z, color, intensity) {
-
-            const directionalLight = new THREE.DirectionalLight(color, intensity);
-            directionalLight.position.set(x, y, z);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 4096;
-            directionalLight.shadow.mapSize.height = 4096;
-            directionalLight.shadow.camera.near = 1;
-            directionalLight.shadow.camera.far = 50;
-            directionalLight.color.setHSL(0.1, 1, 0.95);
-            /*
-            lightHelper = new THREE.DirectionalLightHelper( directionalLight );
-                                        this.scene.add( lightHelper );
-            */
-            this.scene.add(directionalLight);
-        }
-
-
         TD.getBoxSizeCenter = function (object) {
             // compute the box that contains the object (and objects in the graph below)
             const box = new THREE.Box3().setFromObject(object);
@@ -216,27 +197,22 @@
             this.controls.addEventListener('change', this.render.bind(this));
             this.controls.addEventListener('start', this.controlsStart.bind(this));
             this.controls.addEventListener('end', this.controlsEnd.bind(this));
+
             // Scene and RoomEnvironment
-            this.scene = new THREE.Scene();
-            this.scene.add(this.camera);
-            this.scene.add(new THREE.AmbientLight(0x666666, 2.5));
-            const environment = new THREE.RoomEnvironment();
+            const environment = new THREE.RoomEnvironment(this.renderer);
             const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+            this.scene = new THREE.Scene();
+            //this.scene.background = new THREE.Color(0xbbbbbb);
+            this.scene.background = new THREE.Color(0x0000000);
             this.scene.environment = pmremGenerator.fromScene(environment).texture;
             environment.dispose();
-            // shadowedLigt
-            TD.addShadowedLight(1, 1, 1, 0xffffff, 3.5);
-            // multi lights possible, looks better
-            TD.addShadowedLight(-1, 0.5, -0.5, 0xffffff, 1.5);
             TD.load('stl', model, source);
 
         };
 
 
         TD.initGLB = function (model, source) {
-
             this.modeltype = modeltype;
-
             if (document.getElementById('container')) {
 
                 this.scene.clear();
@@ -266,23 +242,13 @@
             this.controls.addEventListener('start', this.controlsStart.bind(this));
             this.controls.addEventListener('end', this.controlsEnd.bind(this));
             // Scene and RoomEnvironment
-            const environment = new THREE.RoomEnvironment();
+            const environment = new THREE.RoomEnvironment(this.renderer);
             const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
             this.scene = new THREE.Scene();
-            this.scene.add(this.camera);
-            this.scene.add(new THREE.AmbientLight(0x666666, 3.5));
             this.scene.background = new THREE.Color(0xbbbbbb);
+            //this.scene.background = new THREE.Color(0x0000000);
             this.scene.environment = pmremGenerator.fromScene(environment).texture;
             environment.dispose();
-            TD.addShadowedLight(1, 1, 1, 0xffffff, 3.5);
-            // helper for testing
-            /*
-            const grid = new THREE.GridHelper(500, 10, 0xffffff, 0xffffff);
-            grid.material.opacity = 0.5;
-            grid.material.depthWrite = false;
-            grid.material.transparent = true;
-            this.scene.add(grid);
-            */
             TD.load('glb', model, source);
         };
 
@@ -317,16 +283,10 @@
 
         // STL Material wird Geometry hinzugefügt
         TD.geometryToObject = function (geometry) {
-            const material = new THREE.MeshPhongMaterial(
-                {
-                    color: 0xf0ebe8,
-                    shininess: 5,
-                    flatShading: true,
-                    side: THREE.DoubleSide,
-                    // below used to be implicit, but that changed in
-                    // @see https://github.com/mrdoob/three.js/pull/13035/files
-                    shadowSide: THREE.BackSide
-                }
+
+            const vertexColors = geometry.hasAttribute('color');
+            const material = new THREE.MeshStandardMaterial(
+                { color: 0xf0ebe8, flatShading: true, side: THREE.DoubleSide, vertexColors }
             );
             return new THREE.Mesh(geometry, material);
         };
@@ -384,7 +344,6 @@
                     object.scene.traverse(function (node) {
                         console.log(node);
                         if (node.material) {
-                            //alert('material');
                             node.material.side = THREE.DoubleSide;
                         }
                         if (node.mesh) {
