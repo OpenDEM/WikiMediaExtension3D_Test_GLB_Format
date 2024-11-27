@@ -203,10 +203,15 @@
             object.position.y -= center.y;
             object.position.z -= center.z;
 
-            // In GLB, Y-Up is required. In STL it's unclear, but likely that
-            // Y-Up is typical, though Z-Up is also common. three.js controls
-            // mostly assume Y-Up. To apply a Z-Up to Y-Up conversion:
-            // object.set( - Math.PI / 2, 0, 0 );
+            // In glTF, +Y=Up is required. In STL it's unclear, but for backward-
+            // compatibility we keep +Z=Up. Because some three.js features assume
+            // +Y=Up, apply a +Z to +Y conversion for STL.
+            if (this.modeltype === 'stl') {
+                const parent = new THREE.Object3D();
+                parent.rotation.set(- Math.PI / 2, 0, 0);
+                parent.add(object);
+                object = parent;
+            }
 
             // Prevent controls from dollying out farther than 10x size.
             this.controls.maxDistance = size * 10;
