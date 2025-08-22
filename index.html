@@ -5,7 +5,6 @@
     <title>t</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <!--  <link type="text/css" rel="stylesheet" href="main.css"> -->
     <style>
         html, body {
             margin: 0;
@@ -43,6 +42,8 @@
                 </option>
                 <option value="ganesha.glb">Ganesha Cologne Zoo - https://codeforcologne.github.io/Denkmal-4D-Koeln/
                 </option>
+                <option value="AnimatedMorphCube.glb">AnimatedMorphCube - KhronosGroup Models Testing</option>
+                <option value="animated_tectonic_plates_collide_loop.glb">tectonic plates Animated - CC-BY-SA Syafani</option>
                 <option value="Avocado.glb">Avocado - KhronosGroup Models Testing</option>
                 <option value="BarramundiFish.glb">BarramundiFish - KhronosGroup Models Testing</option>
                 <option value="LightsPunctualLamp.glb">LightsPunctualLamp - KhronosGroup Models Testing</option>
@@ -57,20 +58,21 @@
                     https://codeforcologne.github.io/Denkmal-4D-Koeln/</option>
                 <option value="grinkopf_opt.glb">Grinkopf Cologne - Optimized with gltf-transform
                     https://codeforcologne.github.io/Denkmal-4D-Koeln/</option>
-                <option value="coffeemat.glb">coffeemat with KTX2 cpmpression - KhronosGroup Models Testing</option>
+                <option value="coffeemat.glb">coffeemat with KTX2 cpmpersion - KhronosGroup Models Testing</option>
             </optgroup>
         </select>
         <button id="uploadButton">Upload a file</button>
         <p>Only simple GLB Models and KTX2 commpersion is supported</p>
-
-
-
     </div>
+    
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src='./lib/three/three_all_in.js'></script>
 
     <script>
+        // animation
+        let mixer = null;
+        let clock = new THREE.Clock();
 
         document.getElementById('uploadButton').addEventListener('click', function () {
             loadFileViaFileAPI((contents, fileName) => {
@@ -89,7 +91,7 @@
         function loadFileViaFileAPI(callback) {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.stl,.glb'; // Adjust file types as needed
+            input.accept = '.stl,.glb';
 
             input.onchange = function (event) {
                 const file = event.target.files[0];
@@ -114,8 +116,6 @@
             input.click();
         }
 
-
-
         function loadSelection() {
             var selection = document.getElementById("selection").value;
             if (selection.indexOf('glb') > -1) {
@@ -128,25 +128,16 @@
             }
         }
 
-        /*
-             window.THREE = require( './lib/three/three.js' );
-           */
-
-        // let modeltype = 'glb';
         let modeltype = 'stl';
 
         function ThreeD(viewer) {
             THREE.Cache.enabled = true;
             this.viewer = viewer;
-            //  this.progressBar = viewer.ui.panel.progressBar;
-            //  this.$container = viewer.ui.canvas.$imageDiv;
         }
 
         const TD = ThreeD.prototype;
 
-
         TD.init = function (model, source) {
-
             this.modeltype = modeltype;
 
             if (document.getElementById('container')) {
@@ -158,6 +149,7 @@
             container.id = 'container';
             document.body.appendChild(container);
             const dimensions = this.getDimensions();
+            
             // renderer
             this.renderer = new THREE.WebGLRenderer({ antialias: true });
             this.renderer.setClearColor(0x222222);
@@ -166,8 +158,10 @@
             this.renderer.shadowMap.enabled = true;
             document.getElementById('container').appendChild(this.renderer.domElement);
             this.manager = new THREE.LoadingManager();
+            
             // camera
             this.camera = new THREE.PerspectiveCamera(60, dimensions.ratio);
+            
             // controls
             this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
             this.controls.rotateSpeed = 2;
@@ -184,28 +178,19 @@
             this.scene.environment = pmremGenerator.fromScene(environment).texture;
             environment.dispose();
             TD.load(this.modeltype, model, source);
-
         };
 
         TD.stageContent = function (object) {
-            // Ensure all transform matrices are up to date.
             object.updateMatrixWorld();
 
-            // Compute axis-aligned bounding box (AABB) and center (x, y, z) in
-            // world space. Size, defined here as a cheap approximation of
-            // model's maximum span in any direction, is computed from the AABB.
             const box = new THREE.Box3().setFromObject(object);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3()).length();
 
-            // Center content at the origin, (0, 0, 0).
             object.position.x -= center.x;
             object.position.y -= center.y;
             object.position.z -= center.z;
 
-            // In glTF, +Y=Up is required. In STL it's unclear, but for backward-
-            // compatibility we keep +Z=Up. Because some three.js features assume
-            // +Y=Up, apply a +Z to +Y conversion for STL.
             if (this.modeltype === 'stl') {
                 const parent = new THREE.Object3D();
                 parent.rotation.set(- Math.PI / 2, 0, 0);
@@ -213,39 +198,22 @@
                 object = parent;
             }
 
-            // Prevent controls from dollying out farther than 10x size.
             this.controls.maxDistance = size * 10;
 
-            // Constrain camera near and far planes to factors of size. Planes
-            // should fit the content tightly enough that depth buffer
-            // precision is utilized well, but not so tight that the model
-            // clips the near/far planes easily while interacting with controls.
             this.camera.near = size / 100;
             this.camera.far = size * 100;
             this.camera.updateProjectionMatrix();
 
-            // Default viewing angle is arbitrary and subjective, some models
-            // may benefit from a more top-down or front-facing perspective. To
-            // split the difference somewhat, we use a diagonal. Comparisons:
-            // sketchfab.com: ( 0, -distance, 0 )
-            // viewstl.com: ( 0, 0 distance )
-            // openjscad.org: ( 0, -distance, distance )
-            // thingiverse.com: ( -distance, -distance, distance )
             this.camera.position.x += size * 0.75;
             this.camera.position.y += size * 0.5;
             this.camera.position.z += size * 0.75;
 
-            // Rotate the camera to look at the object's center, (0, 0, 0).
             this.camera.lookAt(object.position);
 
-            // Add content to scene.
             this.scene.add(object);
         };
 
-
-        // STL Material wird Geometry hinzugefügt
         TD.geometryToObject = function (geometry) {
-
             const vertexColors = geometry.hasAttribute('color');
             const material = new THREE.MeshStandardMaterial(
                 { color: 0xf0ebe8, flatShading: true, side: THREE.DoubleSide, vertexColors }
@@ -254,17 +222,45 @@
         };
 
         TD.glb = function (data) {
-            return data
+            // animation setup
+            if (data.animations && data.animations.length > 0) {
+                console.log('Animationen gefunden:', data.animations.length);
+                
+                // removbe old mixer if exists
+                if (mixer) {
+                    mixer.stopAllAction();
+                    mixer = null;
+                }
+                
+                mixer = new THREE.AnimationMixer(data.scene);
+                
+                data.animations.forEach((clip) => {
+                    console.log('Animation wird hinzugefügt:', clip.name);
+                    const action = mixer.clipAction(clip);
+                    action.play();
+                });
+            } else {
+                console.log('Keine Animationen in dieser GLB-Datei gefunden');
+            }
+            
+            return data;
         }
-
 
         TD.render = function () {
             this.renderer.render(this.scene, this.camera);
         };
 
+        // animate funktion
         TD.animate = function () {
             requestAnimationFrame(this.animate.bind(this));
+            
+            if (mixer) {
+                const delta = clock.getDelta();
+                mixer.update(delta);
+            }
+            
             this.controls.update();
+            this.render();
         };
 
         TD.onWindowResize = function () {
@@ -280,33 +276,22 @@
             this.render(this.renderer, this.scene, this.camera);
         };
 
-        // MMV stuff
         TD.unload = function () {
-            // 3D files are wrapped inside a new parent class, where the '3D' badge
-            // is also attached to
-            // we don't want to keep that wrapper class around (could cause unexpected
-            // results), and definitely want that '3D' badge gone...
             const $threedParent = this.$container.parent('.mw-3d-wrapper');
             $threedParent.replaceWith(this.$container);
         };
 
         TD.load = function (extension, url, source) {
-            // Abort any loading that might still be happening
             if (this.promise) {
                 this.promise.reject();
             }
             this.promise = this.loadFile(extension, url, source);
-            //this.progressBar.jumpTo(0);
-            // this.progressBar.animateTo(5);
+            
             this.promise.then((object) => {
                 delete this.promise;
 
-                //     this.progressBar.hide();
-
                 const content = this.modeltype === 'glb' ? object.scene : object;
 
-                // STL contains a single mesh, GLB may contain more. Traverse
-                // to handle both cases.
                 content.traverse(function (node) {
                     if (node.isMesh) {
                         node.castShadow = true;
@@ -318,12 +303,9 @@
 
                 container.appendChild(this.renderer.domElement);
                 TD.animate();
-
-                //    mw.threed.base.wrap(this.$container);
             }).progress((progress) => {
-                //    this.progressBar.animateTo(progress);
-            }).fail(( /* error */) => {
-                //      this.progressBar.hide();
+                // Progress handling
+            }).fail(() => {
                 delete this.promise;
             });
         };
@@ -331,6 +313,7 @@
         TD.loadFile = function (extension, url, source) {
             const deferred = $.Deferred();
             let loader;
+            
             if (extension === 'stl') {
                 if (source === 'server') {
                     loader = new THREE.STLLoader(this.manager).setPath('models/');
@@ -338,12 +321,11 @@
                     loader = new THREE.STLLoader(this.manager);
                 }
             }
+            
             if (extension === 'glb') {
-
                 const ktx2Loader = new THREE.KTX2Loader()
                     .setTranscoderPath('lib/three/')
                     .detectSupport(this.renderer);
-
 
                 if (source === 'server') {
                     loader = new THREE.GLTFLoader(this.manager).setPath('models/');
@@ -353,12 +335,10 @@
 
                 loader.setKTX2Loader(ktx2Loader);
                 loader.setMeshoptDecoder(THREE.MeshoptDecoder);
-
             }
 
             const request = loader.load(url, (data) => {
                 let object = data;
-
 
                 if (extension === 'stl') {
                     object = this.geometryToObject(data);
@@ -393,45 +373,17 @@
 
         TD.getDimensions = function () {
             const width = $(window).width(),
-                // height = this.viewer.ui.canvas.$imageWrapper.height();
                 height = $(window).height();
             return { width: width, height: height, ratio: width / height };
         };
 
-        // MMV stuff
-        // unload when switching images or cleaning up MMV altogether
-        /*
-                $(document).on('mmv-hash mmv-cleanup-overlay', () => {
-                    if (singleton) {
-                        singleton.unload();
-                    }
-                });
-        */
-        /*
-
-        if (!singleton) {
-            singleton = new ThreeD(viewer);
-        }
-        */
-
-
-        /*
-        singleton.init();
-        singleton.animate();
-        singleton.load('stl', e.imageInfo.url);
-*/
-
-
-
+        // Initialisierung
         if (modeltype === 'glb') {
             TD.init('ganesha.glb', 'server');
         }
         if (modeltype === 'stl') {
             TD.init('3D_Model_Hydria.stl', 'server');
         }
-
-
-        //      mw.mmv.ThreeD = ThreeD;
 
     </script>
 </body>
