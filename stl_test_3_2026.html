@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>test .stl</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <!--  <link type="text/css" rel="stylesheet" href="main.css"> -->
+</head>
+
+<body>
+    <div>
+        <h1>Prototype Viewer MediaWiki 3D GLTF Data, STL data is already available </h1>
+        <select id="selection" onchange="loadSelection()">
+            <option value="">Please choose a model</option>
+            <option value="stl_lion.stl">STL Lion Cologne Zoo - https://codeforcologne.github.io/Denkmal-4D-Koeln/
+            </option>
+            <option value="ganesha_stl.stl">STL Ganesha Cologne Zoo - https://codeforcologne.github.io/Denkmal-4D-Koeln/
+            </option>
+            <option value="3D_Model_Hydria.stl">STL Hydria -https://commons.wikimedia.org/wiki/File:3D_Model_Hydria.stl
+            </option>
+            <option value="Asad_Al-Lat.stl">STL Asad Al-Lat statue
+                -https://commons.wikimedia.org/wiki/File:Chinese_guardian_lions_at_the_WIPO-High_poly.stl
+            </option>
+            <option value="3D_model_of_an_African_elephant.stl">STL African_elephant
+                -https://commons.wikimedia.org/wiki/File:3D_model_of_an_African_elephant.stl</option>
+            <option value="3D_model_of_the_human_mouth.stl">STL Human mouth
+                -https://commons.wikimedia.org/wiki/File:3D_model_of_the_human_mouth.stl</option>
+            <option value="Sphericon.stl">STL Spericon
+                -https://commons.wikimedia.org/wiki/File:Sphericon.stl</option>
+            <option value="Menger_sponge_2.stl">STL Menger sponge
+                -https://commons.wikimedia.org/wiki/File:Menger_sponge_2.stl</option>
+                <option value="Massospondylus_skull_BP-1-5241_3D_scan.stl">STL Massospondylus skull
+                -https://commons.wikimedia.org/wiki/File:Massospondylus_skull_BP-1-5241_3D_scan.stl</option>
+            <option value="3Ddata.glb">GLB Lion Cologne Zoo - https://codeforcologne.github.io/Denkmal-4D-Koeln/
+            </option>
+            <option value="ganesha.glb">GLB Ganesha Cologne Zoo - https://codeforcologne.github.io/Denkmal-4D-Koeln/
+            </option>
+            <option value="Avocado.glb">GLB Avocado - KhronosGroup Models Testing</option>
+            <option value="BarramundiFish.glb">GLB BarramundiFish - KhronosGroup Models Testing</option>
+            <option value="LightsPunctualLamp.glb">LightsPunctualLamp - KhronosGroup Models Testing</option>
+            <option value="Duck.glb">GLB Duck - KhronosGroup Models Testing</option>
+            <option value="NodePerformanceTest.glb">Wait a little bit! NodePerformanceTest - KhronosGroup Models Testing
+            </option>
+            <option value="NodePerformanceTest_opt.glb">Wait a little bit! NodePerformanceTest - Optimized with
+                gltf-transform -
+                KhronosGroup Models Testing
+            </option>
+            <option value="grinkopf.glb">Wait a little bit! Grinkopf Cologne -
+                https://codeforcologne.github.io/Denkmal-4D-Koeln/</option>
+            <option value="grinkopf_opt.glb">Grinkopf Cologne - Optimized with gltf-transform
+                https://codeforcologne.github.io/Denkmal-4D-Koeln/</option>
+            <option value="coffeemat.glb">GLB coffeemat with KTX2 cpmpression - KhronosGroup Models Testing</option>
+        </select>
+        <button id="uploadButton">Upload a file</button>
+        <p>Only simple GLB Models and KTX2 commpersion is supported</p>
+
+
+
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src='./lib/three/three_all_in.js'></script>
+
+    <script>
+
+        document.getElementById('uploadButton').addEventListener('click', function () {
+            loadFileViaFileAPI((contents, fileName) => {
+                if (fileName.toLowerCase().endsWith('.stl')) {
+                    modeltype = 'stl';
+                    TD.initSTL(contents, 'browser');
+                } else if (fileName.toLowerCase().endsWith('.glb')) {
+                    modeltype = 'glb';
+                    TD.initGLB(contents, 'browser');
+                } else {
+                    console.error('Unsupported file type');
+                }
+            });
+        });
+
+        function loadFileViaFileAPI(callback) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.stl,.glb'; // Adjust file types as needed
+
+            input.onchange = function (event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    console.log('No file selected');
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const contents = e.target.result; // ArrayBuffer
+                    callback(contents, file.name);
+                };
+
+                reader.onerror = function (e) {
+                    console.error('Error reading file:', e);
+                };
+                // read as ArrayBuffer so loaders can parse binary data directly
+                reader.readAsArrayBuffer(file);
+            };
+
+            input.click();
+        }
+
+
+
+        function loadSelection() {
+            var selection = document.getElementById("selection").value;
+            if (selection.indexOf('glb') > -1) {
+                modeltype = 'glb';
+                TD.initGLB(selection, 'server');
+            }
+            if (selection.indexOf('stl') > -1) {
+                modeltype = 'stl';
+                TD.initSTL(selection, 'server');
+            }
+        }
+
+        /*
+             window.THREE = require( './lib/three/three.js' );
+           */
+
+        // let modeltype = 'glb';
+        let modeltype = 'stl';
+
+        function ThreeD(viewer) {
+            THREE.Cache.enabled = true;
+            this.viewer = viewer;
+            //  this.progressBar = viewer.ui.panel.progressBar;
+            //  this.$container = viewer.ui.canvas.$imageDiv;
+        }
+
+        const TD = ThreeD.prototype;
+
+        TD.getBoxSizeCenter = function (object) {
+            // compute the box that contains the object (and objects in the graph below)
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3()).length();
+            const center = box.getCenter(new THREE.Vector3());
+            console.log(size);
+            console.log(center);
+            return { size, center };
+
+        };
+
+        TD.moveCamera = function (sizeToFitOnScreen, boxSize, boxCenter, camera) {
+            const halfSizeToFitOnScreen = sizeToFitOnScreen * 0.5;
+            const halfFovY = THREE.MathUtils.degToRad(camera.fov * 0.5);
+            const distance = halfSizeToFitOnScreen / Math.tan(halfFovY);
+
+            // compute a unit vector that points in the direction the camera is now
+            // in hte xz plane from the center of the box
+            const direction = new THREE.Vector3()
+                .subVectors(camera.position, boxCenter)
+                .multiply(new THREE.Vector3(1, 0, 1))
+                .normalize();
+
+            // move the camera to a position distance units way from the center
+            // in whatever direction the camera was from the center already
+            // for the screenshots, it is good not too be too far away
+            camera.position.copy(direction.multiplyScalar(distance + 3).add(boxCenter));
+
+            // pick some near and far values for the frustum that
+            // will contain the box.
+            camera.near = boxSize / 100; // eslint-disable-line no-param-reassign
+            camera.far = boxSize * 100; // eslint-disable-line no-param-reassign
+
+            camera.updateProjectionMatrix();
+
+            // point the camera to look at the center of the box
+            camera.lookAt(boxCenter.x, boxCenter.y, boxCenter.z);
+        };
+
+
+        TD.initSTL = function (model, source) {
+
+            this.modeltype = modeltype;
+            if (document.getElementById('container')) {
+                this.scene.clear();
+                const child = document.getElementById('container');
+                document.body.removeChild(child);
+            }
+            container = document.createElement('div');
+            container.id = 'container';
+            document.body.appendChild(container);
+            const dimensions = this.getDimensions();
+
+            // copy from https://gerrit.wikimedia.org/r/c/mediawiki/extensions/3D/+/1247633
+
+            this.renderer = new THREE.WebGLRenderer({ antialias: true });
+            this.renderer.setClearColor(0x222222);
+            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.setSize(dimensions.width, dimensions.height);
+            this.renderer.shadowMap.enabled = true;
+            this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            //	this.$container.html( this.renderer.domElement );
+            document.getElementById('container').appendChild(this.renderer.domElement);
+
+            this.manager = new THREE.LoadingManager();
+
+            // near/far values are based on the scale normalization done in TD.center()
+            //	this.camera = new THREE.PerspectiveCamera( 60, dimensions.ratio, 0.5, 500 );
+            this.camera = new THREE.PerspectiveCamera(60, dimensions.ratio, 0.001, 500000);
+
+            this.camera.up.set(0, 0, 1);
+
+            this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+            this.controls.rotateSpeed = 4;
+            this.controls.zoomSpeed = 4;
+            this.controls.panSpeed = 4;
+            this.controls.addEventListener('change', this.render.bind(this));
+            this.controls.addEventListener('start', this.controlsStart.bind(this));
+            this.controls.addEventListener('end', this.controlsEnd.bind(this));
+
+            this.scene = new THREE.Scene();
+            this.scene.add(this.camera);
+
+            // lights setup
+            this.scene.add(new THREE.AmbientLight(0xfff4e0, 0.3));
+
+            // main light, the only one casting shadows.
+            this.keyLight = new THREE.DirectionalLight(0xfff4e0, 1.8);
+            this.keyLight.position.set(15, 20, 15);
+            this.keyLight.castShadow = true;
+            this.keyLight.shadow.mapSize.width = 2048;
+            this.keyLight.shadow.mapSize.height = 2048;
+            this.keyLight.shadow.bias = -0.0005;
+            this.keyLight.shadow.normalBias = 0.1;
+            this.keyLight.shadow.camera.near = 1;
+            this.keyLight.shadow.camera.far = 80;
+            // These default values will be adjusted after centering/scaling the model.
+            this.keyLight.shadow.camera.left = -20;
+            this.keyLight.shadow.camera.right = 20;
+            this.keyLight.shadow.camera.top = 20;
+            this.keyLight.shadow.camera.bottom = -20;
+            this.scene.add(this.keyLight);
+
+            // fill light
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            fillLight.position.set(-20, 5, 10);
+            this.scene.add(fillLight);
+
+            // rim/back light
+            const rimLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            rimLight.position.set(5, -15, -20);
+            this.scene.add(rimLight);
+
+            //	$( window ).on( 'resize.3d', mw.util.debounce( this.onWindowResize.bind( this ), 100 ) );
+            //this.render();
+
+            TD.load('stl', model, source);
+
+
+        };
+
+
+        TD.initGLB = function (model, source) {
+            this.modeltype = modeltype;
+            if (document.getElementById('container')) {
+
+                this.scene.clear();
+                const child = document.getElementById('container');
+                document.body.removeChild(child);
+            }
+            container = document.createElement('div');
+            container.id = 'container';
+            document.body.appendChild(container);
+            const dimensions = this.getDimensions();
+            // renderer
+            this.renderer = new THREE.WebGLRenderer({ antialias: true });
+            // this.renderer.setClearColor(0x222222);
+            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.setSize(dimensions.width, dimensions.height);
+            this.renderer.shadowMap.enabled = true;
+            document.getElementById('container').appendChild(this.renderer.domElement);
+            // camera
+            this.camera = new THREE.PerspectiveCamera(60, dimensions.ratio, 0.001, 500000);
+            //this.camera.up.set(0, 0, 1);
+            // controls
+            this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+            this.controls.rotateSpeed = 2;
+            this.controls.zoomSpeed = 2;
+            this.controls.panSpeed = 0.5;
+            this.controls.addEventListener('change', this.render.bind(this));
+            this.controls.addEventListener('start', this.controlsStart.bind(this));
+            this.controls.addEventListener('end', this.controlsEnd.bind(this));
+            // Scene and RoomEnvironment
+            const environment = new THREE.RoomEnvironment(this.renderer);
+            const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
+            this.scene = new THREE.Scene();
+            this.scene.background = new THREE.Color(0xbbbbbb);
+            //this.scene.background = new THREE.Color(0x0000000);
+            this.scene.environment = pmremGenerator.fromScene(environment).texture;
+            environment.dispose();
+            TD.load('glb', model, source);
+        };
+
+
+        TD.center = function (object, modeltype) {
+
+            if (modeltype === 'stl') {
+                if (object.type === 'Group') {
+                    this.center(object.children[0], 'stl');
+                } else if (object.type === 'Mesh') {
+                    object.geometry.center();
+                    object.geometry.computeBoundingSphere();
+
+                    // Normalize scale so models of different sizes are shown consistently.
+                    const normalizedScale = 10 / object.geometry.boundingSphere.radius;
+                    object.scale.setScalar(normalizedScale);
+
+                    const radius = object.geometry.boundingSphere.radius * normalizedScale;
+
+                    // Position camera relative to normalized radius
+                    this.camera.position.set(-radius * 1.5, -radius * 1.5, radius);
+
+                    // Adjust camera near/far based on object size
+                    this.camera.near = Math.max(radius / 1000, 0.001);
+                    this.camera.far = Math.max(radius * 100, 1000);
+                    this.camera.updateProjectionMatrix();
+
+                    // If keyLight exists, expand its shadow camera to cover the model
+                    if (this.keyLight && this.keyLight.shadow && this.keyLight.shadow.camera) {
+                        const extent = Math.max(radius * 2, 20);
+                        this.keyLight.shadow.camera.left = -extent;
+                        this.keyLight.shadow.camera.right = extent;
+                        this.keyLight.shadow.camera.top = extent;
+                        this.keyLight.shadow.camera.bottom = -extent;
+                        this.keyLight.shadow.camera.near = Math.max(radius / 10, 0.1);
+                        this.keyLight.shadow.camera.far = Math.max(radius * 10, 100);
+                        if (typeof this.keyLight.shadow.camera.updateProjectionMatrix === 'function') {
+                            this.keyLight.shadow.camera.updateProjectionMatrix();
+                        }
+                    }
+                }
+            }
+        };
+
+
+        // STL Material wird Geometry hinzugefügt
+        TD.geometryToObject = function (geometry) {
+
+            const vertexColors = geometry.hasAttribute('color');
+
+            const material = new THREE.MeshStandardMaterial(
+                { color: 0xf0ebe8, flatShading: true, side: THREE.DoubleSide, vertexColors }
+
+            );
+
+            /*
+            const material = new THREE.MeshPhongMaterial(
+                { color: 0xf0ebe8, shininess: 5, flatShading: true, side: THREE.DoubleSide, vertexColors }
+            );*/
+
+            return new THREE.Mesh(geometry, material);
+        };
+
+        TD.glb = function (data) {
+            return data
+        }
+
+
+        TD.render = function () {
+            this.renderer.render(this.scene, this.camera);
+        };
+
+        TD.animate = function () {
+            requestAnimationFrame(this.animate.bind(this));
+            this.controls.update();
+        };
+
+        TD.onWindowResize = function () {
+            const dimensions = this.getDimensions();
+
+            this.camera.aspect = dimensions.width / dimensions.height;
+            this.camera.updateProjectionMatrix();
+
+            this.renderer.setSize(dimensions.width, dimensions.height);
+
+            this.controls.handleResize();
+
+            this.render(this.renderer, this.scene, this.camera);
+        };
+
+        // MMV stuff
+        TD.unload = function () {
+            // 3D files are wrapped inside a new parent class, where the '3D' badge
+            // is also attached to
+            // we don't want to keep that wrapper class around (could cause unexpected
+            // results), and definitely want that '3D' badge gone...
+            const $threedParent = this.$container.parent('.mw-3d-wrapper');
+            $threedParent.replaceWith(this.$container);
+        };
+
+        TD.load = function (extension, url, source) {
+            // Abort any loading that might still be happening
+            if (this.promise) {
+                this.promise.reject();
+            }
+            this.promise = this.loadFile(extension, url, source);
+            //this.progressBar.jumpTo(0);
+            // this.progressBar.animateTo(5);
+            this.promise.then((object) => {
+                delete this.promise;
+                // check for GLB
+                if (this.modeltype === 'glb') {
+
+                    object.scene.traverse(function (node) {
+                        console.log(node);
+                        if (node.material) {
+                            node.material.side = THREE.DoubleSide;
+                        }
+                        if (node.mesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }
+
+                    });
+                    // Add the model to the scene
+                    this.scene.add(object.scene);
+                    // move camera
+                    let box = this.getBoxSizeCenter(object.scene);
+                    this.moveCamera(box.size * 0.5, box.size, box.center, this.camera);
+                    this.controls.maxDistance = box.size * 10;
+                    this.controls.target.copy(box.center);
+                    this.controls.update();
+                }
+
+                if (this.modeltype === 'stl') {
+                    //     this.progressBar.hide();
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                    this.center(object, 'stl');
+                    this.scene.add(object);
+                    this.camera.lookAt(this.scene.position);
+                }
+                // renderer DOM element already appended in initSTL/initGLB
+                TD.animate();
+
+
+                //    mw.threed.base.wrap(this.$container);
+            }).progress((progress) => {
+                //    this.progressBar.animateTo(progress);
+            }).fail(( /* error */) => {
+                //      this.progressBar.hide();
+                delete this.promise;
+            });
+        };
+
+        TD.loadFile = function (extension, url, source) {
+            const deferred = $.Deferred();
+            let loader;
+            if (extension === 'stl') {
+                if (source === 'server') {
+                    loader = new THREE.STLLoader(this.manager).setPath('models/');
+                } else {
+                    loader = new THREE.STLLoader(this.manager);
+                }
+            }
+            if (extension === 'glb') {
+
+                const ktx2Loader = new THREE.KTX2Loader()
+                    .setTranscoderPath('lib/three/')
+                    .detectSupport(this.renderer);
+
+
+                if (source === 'server') {
+                    loader = new THREE.GLTFLoader(this.manager).setPath('models/');
+                } else {
+                    loader = new THREE.GLTFLoader(this.manager);
+                }
+
+                loader.setKTX2Loader(ktx2Loader);
+                loader.setMeshoptDecoder(THREE.MeshoptDecoder);
+
+            }
+
+
+            // If we have binary data from a browser upload (ArrayBuffer), use parse APIs
+            if (source === 'browser' && (url instanceof ArrayBuffer || ArrayBuffer.isView(url))) {
+                if (extension === 'stl') {
+                    try {
+                        const geometry = loader.parse(url);
+                        const object = this.geometryToObject(geometry);
+                        deferred.resolve(object);
+                    } catch (err) {
+                        deferred.reject(err);
+                    }
+                } else if (extension === 'glb') {
+                    // GLTFLoader.parse(arrayBuffer, path, onLoad, onError)
+                    try {
+                        loader.parse(url, '', (data) => {
+                            const object = this.glb(data);
+                            deferred.resolve(object);
+                        }, (err) => {
+                            deferred.reject(err);
+                        });
+                    } catch (err) {
+                        deferred.reject(err);
+                    }
+                } else {
+                    deferred.reject(new Error('Unsupported extension for browser data'));
+                }
+
+                return deferred.promise();
+            }
+
+            // Fallback: use loader.load with URL string (server paths)
+            const request = loader.load(url, (data) => {
+                let object = data;
+
+                if (extension === 'stl') {
+                    object = this.geometryToObject(data);
+                }
+                if (extension === 'glb') {
+                    object = this.glb(data);
+                }
+
+                deferred.resolve(object);
+            }, (progress) => {
+                deferred.notify((progress.loaded / progress.total) * 100);
+            }, (error) => {
+                deferred.reject(error);
+            });
+
+            deferred.fail(() => {
+                if (request && request.readyState !== 4) {
+                    request.abort();
+                }
+            });
+
+            return deferred.promise();
+        };
+
+        TD.controlsStart = function () {
+            $(this.renderer.domElement).addClass('mw-mmv-canvas-mousedown');
+        };
+
+        TD.controlsEnd = function () {
+            $(this.renderer.domElement).removeClass('mw-mmv-canvas-mousedown');
+        };
+
+        TD.getDimensions = function () {
+            const width = $(window).width(),
+                // height = this.viewer.ui.canvas.$imageWrapper.height();
+                height = $(window).height();
+            return { width: width, height: height, ratio: width / height };
+        };
+
+        // MMV stuff
+        // unload when switching images or cleaning up MMV altogether
+        /*
+                $(document).on('mmv-hash mmv-cleanup-overlay', () => {
+                    if (singleton) {
+                        singleton.unload();
+                    }
+                });
+        */
+        /*
+
+        if (!singleton) {
+            singleton = new ThreeD(viewer);
+        }
+        */
+
+
+        /*
+        singleton.init();
+        singleton.animate();
+        singleton.load('stl', e.imageInfo.url);
+*/
+
+
+
+        if (modeltype === 'glb') {
+            TD.initGLB('ganesha.glb', 'server');
+        }
+        if (modeltype === 'stl') {
+            TD.initSTL('Asad_Al-Lat.stl', 'server');
+        }
+
+
+        //      mw.mmv.ThreeD = ThreeD;
+
+    </script>
+</body>
+
+</html>
